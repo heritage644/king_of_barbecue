@@ -1,0 +1,30 @@
+{
+  "name": "king-of-barbecue",
+  "private": true,
+  "version": "0.1.0",
+  "description": "King of Barbecue — restaurant commerce & operations platform (Phase 1 MVP)",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @kob/core && npm run build -w @kob/api && npm run build -w @kob/worker && npm run build -w @kob/web",
+    "build:core": "npm run build -w @kob/core",
+    "dev": "npm run build:core && concurrently -n api,worker,web -c blue,magenta,green \"npm run dev -w @kob/api\" \"npm run dev -w @kob/worker\" \"npm run dev -w @kob/web\"",
+    "dev:api": "npm run dev -w @kob/api",
+    "dev:worker": "npm run dev -w @kob/worker",
+    "dev:web": "npm run dev -w @kob/web",
+    "db:migrate": "npm run db:migrate -w @kob/api",
+    "db:rollback": "npm run db:rollback -w @kob/api",
+    "db:seed": "npm run db:seed -w @kob/api",
+    "test": "npm run test -w @kob/core && npm run test -w @kob/api",
+    "typecheck": "npm run typecheck -w @kob/core && npm run typecheck -w @kob/api && npm run typecheck -w @kob/worker && npm run typecheck -w @kob/web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
