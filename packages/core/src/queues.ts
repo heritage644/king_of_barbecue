@@ -12,6 +12,7 @@ export const QUEUES = {
   notifications: 'notifications',
   guestAccountLinking: 'guest-account-linking',
   analytics: 'analytics',
+  
 } as const;
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
 

@@ -10,6 +10,8 @@ let client: Redis | null = null;
 export function getRedis(): Redis {
   if (!client) {
     client = new Redis(getEnv().REDIS_URL, {
+      family: 4, // Forces IPv4 lookup for Docker service names
+      connectTimeout: 10000,
       maxRetriesPerRequest: 3,
       enableReadyCheck: true,
       lazyConnect: false,
@@ -18,6 +20,7 @@ export function getRedis(): Redis {
     client.on('error', (err) => {
       log.error({ err: err.message }, 'redis error');
     });
+    console.log('[REDIS CONNECTING TO]:', getEnv().REDIS_URL);
   }
   return client;
 }

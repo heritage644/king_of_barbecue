@@ -1,0 +1,142 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: kob-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: kob
+      POSTGRES_PASSWORD: kob
+      POSTGRES_DB: kob
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kob -d kob"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+
+  redis:
+    image: redis:7-alpine
+    container_name: kob-redis
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis_data:/data
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: kob-api
+
+    env_file:
+      - .env
+
+    environment:
+      DATABASE_URL: postgres://kob:kob@postgres:5432/kob
+      REDIS_URL: redis://redis:6379
+      API_PORT: 4000
+      NODE_ENV: development
+
+    command: >
+      sh -c "npm run build:core &&
+      npm run dev:api"
+
+    ports:
+      - "4000:4000"
+
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+      redis:
+        condition: service_healthy
+
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: kob-worker
+
+    env_file:
+      - .env
+
+    environment:
+      DATABASE_URL: postgres://kob:kob@postgres:5432/kob
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: development
+
+    command: >
+      sh -c "npm run build:core &&
+      npm run dev:worker"
+
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+      redis:
+        condition: service_healthy
+
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: kob-web
+
+    env_file:
+      - .env
+
+    environment:
+      NODE_ENV: development
+      API_INTERNAL_URL: http://api:4000
+
+    command: >
+      sh -c "npm run build:core &&
+      npm run dev -w @kob/web -- -H 0.0.0.0"
+
+    ports:
+      - "3000:3000"
+
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/web/.next
+
+    depends_on:
+      - api
+
+
+volumes:
+  postgres_data:
+  redis_data:
